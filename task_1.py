@@ -1,0 +1,146 @@
+from collections import UserDict
+from datetime import datetime, date, timedelta
+
+class Field:
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return str(self.value)
+
+class Name(Field):
+    def __init__(self, name):
+         super().__init__(name)
+
+class Phone(Field):
+    def __init__(self, value):
+        if not value.isdigit() or len(value) != 10:
+              raise ValueError('Invalid phone number')
+        super().__init__(value)
+
+class Birthday(Field):
+    def __init__(self, value):
+        try:
+            self.value = datetime.strptime(value, '%d.%m.%Y')
+        except ValueError:
+            raise ValueError("Invalid date format. Use DD.MM.YYYY")
+
+
+class Record:
+    def __init__(self, name):
+        self.name = Name(name)
+        self.phones = []    
+        self.birthday = None
+
+    def add_phone(self, phone):
+         p = Phone(phone)
+         self.phones.append(p)  
+
+    def remove_phone(self, phone):
+        for elem in self.phones:
+             if phone == elem.value:
+                  self.phones.remove(elem)
+
+    def edit_phone(self, number, new_number):
+        for num in self.phones:
+            if num.value == number:
+                num.value = new_number
+                return
+        raise ValueError('Phone number not found')
+    
+    def find_phone(self, phone):
+        for elem in self.phones:
+            if phone == elem.value:
+                return elem
+
+    def add_birthday(self, birthday):
+        b = Birthday(birthday)
+        self.birthday = b
+                          
+    def __str__(self):
+        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+
+
+class AddressBook(UserDict):
+    def add_record(self, record):
+        self.data[record.name.value] = record
+
+    def find(self, name):
+        return self.data.get(name)
+        
+    def delete(self, name):
+        if name in self.data:
+            self.data.pop(name)
+
+    def __str__(self):
+        values = [str(v) for v in self.data.values()]
+        my_str = '\n'.join(values)
+        return my_str
+    
+    def date_to_string(self, date):
+        return date.strftime("%Y.%m.%d")
+
+    def find_next_weekday(self, start_date, weekday):
+        days_ahead = weekday - start_date.weekday()
+        if days_ahead <= 0:
+            days_ahead += 7
+        return start_date + timedelta(days=days_ahead)
+    
+    def adjust_for_weekend(self, birthday):
+        if birthday.weekday() >= 5:
+            return self.find_next_weekday(birthday, 0)
+        return birthday
+    
+    def get_upcoming_birthdays(self, days=7):
+        upcoming_birthdays = []
+        today = date.today()
+
+        for record in self.data.values():
+            if record.birthday is None:
+                continue
+            birthday_this_year = record.birthday.value.replace(year=today.year).date()
+            if birthday_this_year < today:
+                birthday_this_year = record.birthday.value.replace(year=today.year + 1).date()
+            
+
+            if 0 <= (birthday_this_year - today).days < days:
+                birthday_this_year = self.adjust_for_weekend(birthday_this_year)          
+
+                congratulation_date_str = self.date_to_string(birthday_this_year)
+                upcoming_birthdays.append({"name": record.name.value, "birthday": congratulation_date_str})
+        return upcoming_birthdays
+
+
+
+# Створення нової адресної книги
+book = AddressBook()
+
+    # Створення запису для John
+john_record = Record("John")
+john_record.add_phone("1234567890")
+john_record.add_phone("5555555555")
+
+    # Додавання запису John до адресної книги
+book.add_record(john_record)
+
+    # Створення та додавання нового запису для Jane
+jane_record = Record("Jane")
+jane_record.add_phone("9876543210")
+book.add_record(jane_record)
+
+    # Виведення всіх записів у книзі
+     
+print(book)
+
+    # Знаходження та редагування телефону для John
+john = book.find("John")
+john.edit_phone("1234567890", "1112223333")
+
+print(john)  # Виведення: Contact name: John, phones: 1112223333; 5555555555
+
+    # Пошук конкретного телефону у записі John
+found_phone = john.find_phone("5555555555")
+print(f"{john.name}: {found_phone}")  # Виведення: John: 5555555555
+
+    # Видалення запису Jane
+book.delete("Jane")
