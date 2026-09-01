@@ -1,70 +1,69 @@
 import decorators as dec
-from task_1 import AddressBook, Record
+from classes import AddressBook, Record, Phone
 
 def parse_input(user_input):
     cmd, *args = user_input.split()
     cmd = cmd.strip().lower()
     return cmd, args
 
-@dec.input_error_add_contact
-def add_contact(args, book: AddressBook):
-    name, phone, *_ = args
-    record = book.find(name)
-    message = "Contact updated."
+@dec.input_error
+def add_contact(args, contacts):
+    name, phone = args
+    record = contacts.find(name)
     if record is None:
         record = Record(name)
-        book.add_record(record)
-        message = "Contact added."
-    if phone:
-        record.add_phone(phone)
-    return message
+        contacts.add_record(record)
+    record.add_phone(phone)
+    return "Contact added."
 
-@dec.input_error_change_contact
+@dec.input_error
 def change_contact(args, book):
-    name, old_phone, new_phone = args
+    name, new_phone = args
     record = book.find(name)
     if record:
-        record.edit_phone(old_phone, new_phone)
-        return 'number is edited'
-    return f'{name} not found'
-
-@dec.input_error_show_phone    
-def show_phone(args, book):
+        record.phones = [Phone(new_phone)]
+        return 'contact updated'
+    else:
+        return 'contact is not found'
+    
+@dec.input_error
+def show_phone(args, contacts):
     name = args[0]
-    record = book.find(name)
-    if record:
-        return record
-    return 'not found' 
+    return contacts[name]
 
-def show_all(book):
-    if not book:
+def show_all(contacts):
+    lines = []
+    if not contacts:
         return 'Contacts list is empty'
-    return str(book)
+    for name, phone in contacts.items():
+        line = f'{name} - {phone}'
+        lines.append(line)
+    all_phones = '\n'.join(lines)
+    return all_phones
 
-@dec.input_error_add_birthday
+@dec.input_error
 def add_birthday(args, book):
     name, birthday = args
     record = book.find(name)
     if record:
         record.add_birthday(birthday)
-        return 'contact is added'
+        return 'date of birthday is added'
     return 'name not found'
 
-
-@dec.input_error_show_birthday
+@dec.input_error
 def show_birthday(args, book):
     name = args[0]
     record = book.find(name)
     if record:
-        return record.birthday.value.strftime('%d.%m.%Y')
+        return record.birthday.value # остання зміна була тут
     return 'not found'   
 
-# при виводі дати народження не повинно бути годин. тільки дата
-
-@dec.input_error_birthdays
-def birthdays(args, book):
-    return book.get_upcoming_birthdays()
-        
+@dec.input_error
+def birthdays(book):
+    upcoming = book.get_upcoming_birthdays()
+    if not upcoming:
+        return 'No upcoming birthdays.'
+    return '/n'.join(f'{item['name']} : {item['birthday']}' for item in upcoming)
 
 def main():
     book = AddressBook()
@@ -94,7 +93,7 @@ def main():
         elif command == "show-birthday":
             print(show_birthday(args, book))
         elif command == "birthdays":
-            print(birthdays(args, book))
+            print(birthdays(book))
         else:
             print("Invalid command.")
 

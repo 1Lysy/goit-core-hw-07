@@ -15,16 +15,16 @@ class Name(Field):
 class Phone(Field):
     def __init__(self, value):
         if not value.isdigit() or len(value) != 10:
-              raise ValueError('Invalid phone number')
+            raise ValueError('Invalid phone number')
         super().__init__(value)
 
 class Birthday(Field):
     def __init__(self, value):
         try:
-            self.value = datetime.strptime(value, '%d.%m.%Y')
+            datetime.strptime(value, '%d.%m.%Y')  
         except ValueError:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
-
+        super().__init__(value)  
 
 class Record:
     def __init__(self, name):
@@ -37,16 +37,18 @@ class Record:
          self.phones.append(p)  
 
     def remove_phone(self, phone):
-        for elem in self.phones:
-             if phone == elem.value:
-                  self.phones.remove(elem)
+        elem = self.find_phone(phone)
+        if elem:
+            self.phones.remove(elem)
 
     def edit_phone(self, number, new_number):
-        for num in self.phones:
-            if num.value == number:
-                num.value = new_number
-                return
-        raise ValueError('Phone number not found')
+        num = self.find_phone(number)
+        if num:
+            self.add_phone(new_number)
+            self.remove_phone(number)
+        else:
+            raise ValueError('Phone number not found')
+
     
     def find_phone(self, phone):
         for elem in self.phones:
@@ -98,22 +100,20 @@ class AddressBook(UserDict):
         for record in self.data.values():
             if record.birthday is None:
                 continue
-            birthday_this_year = record.birthday.value.replace(year=today.year).date()
+            birthday_date = datetime.strptime(record.birthday.value, '%d.%m.%Y').date()
+            birthday_this_year = birthday_date.replace(year=today.year)
             if birthday_this_year < today:
-                birthday_this_year = record.birthday.value.replace(year=today.year + 1).date()
-            
+                birthday_this_year = birthday_date.replace(year=today.year + 1)
 
             if 0 <= (birthday_this_year - today).days < days:
-                birthday_this_year = self.adjust_for_weekend(birthday_this_year)          
-
+                birthday_this_year = self.adjust_for_weekend(birthday_this_year)
                 congratulation_date_str = self.date_to_string(birthday_this_year)
                 upcoming_birthdays.append({"name": record.name.value, "birthday": congratulation_date_str})
         return upcoming_birthdays
 
 
-
 # Створення нової адресної книги
-book = AddressBook()
+book = AddressBook()    
 
     # Створення запису для John
 john_record = Record("John")
@@ -144,3 +144,5 @@ print(f"{john.name}: {found_phone}")  # Виведення: John: 5555555555
 
     # Видалення запису Jane
 book.delete("Jane")
+
+
