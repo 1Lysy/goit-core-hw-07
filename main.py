@@ -12,19 +12,19 @@ def add_contact(args, contacts):
     record = contacts.find(name)
     if record is None:
         record = Record(name)
+        record.add_phone(phone)
         contacts.add_record(record)
-    record.add_phone(phone)
+    else:
+        record.add_phone(phone)
     return "Contact added."
 
 @dec.input_error
 def change_contact(args, book):
     name, new_phone = args
     record = book.find(name)
-    if record:
-        record.phones = [Phone(new_phone)]
-        return 'contact updated'
-    else:
-        return 'contact is not found'
+    record.phones = [Phone(new_phone)]
+    return 'contact updated'
+    
     
 @dec.input_error
 def show_phone(args, contacts):
@@ -32,12 +32,13 @@ def show_phone(args, contacts):
     return contacts[name]
 
 def show_all(contacts):
-    lines = []
     if not contacts:
         return 'Contacts list is empty'
-    for name, phone in contacts.items():
-        line = f'{name} - {phone}'
-        lines.append(line)
+    lines = []
+    for record in contacts.data.values():
+        line = str(record)
+        if record.birthday:
+            lines.append(line)
     all_phones = '\n'.join(lines)
     return all_phones
 
@@ -45,18 +46,15 @@ def show_all(contacts):
 def add_birthday(args, book):
     name, birthday = args
     record = book.find(name)
-    if record:
-        record.add_birthday(birthday)
-        return 'date of birthday is added'
-    return 'name not found'
+    record.add_birthday(birthday)
+    return 'date of birthday is added'
 
 @dec.input_error
 def show_birthday(args, book):
     name = args[0]
     record = book.find(name)
-    if record:
-        return record.birthday.value # остання зміна була тут
-    return 'not found'   
+    return record.birthday.value # остання зміна була тут
+      
 
 @dec.input_error
 def birthdays(book):
