@@ -38,9 +38,9 @@ def show_all(contacts):
     for record in contacts.data.values():
         line = str(record)
         if record.birthday:
-            lines.append(line)
-    all_phones = '\n'.join(lines)
-    return all_phones
+            line += f', birthday: {record.birthday.value}'
+        lines.append(line)
+    return '\n'.join(lines)
 
 @dec.input_error
 def add_birthday(args, book):
@@ -53,7 +53,7 @@ def add_birthday(args, book):
 def show_birthday(args, book):
     name = args[0]
     record = book.find(name)
-    return record.birthday.value # остання зміна була тут
+    return record.birthday.value
       
 
 @dec.input_error
